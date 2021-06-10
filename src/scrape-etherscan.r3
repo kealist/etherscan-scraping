@@ -3,6 +3,40 @@ Rebol[]
 scrape-transactions-from-hash: func [hash] [
     url: to url! probe append copy https://etherscan.io/tx/0x hash
 
+    sections: copy []
+    detagged-sections: copy []
+
+    transaction-page-rules: [
+
+        some section
+        to end
+
+
+    ]
+
+    section-start: "<hr class='hr-space'><div class='row'><div class='col-md-3 font-weight-bold font-weight-sm-normal mb-1 mb-md-0'>"
+
+    section-end: {<hr class="hr-space">}
+
+    section: [
+        thru section-start
+
+        copy sec to section-end
+
+        (append sections sec)
+    ]
+
+    detag-rule: [
+        (output: copy "")
+        some [
+            copy text to "<"
+            (append output text  append output " ")
+            thru ">"
+        ]
+        copy text to end
+        (append output text)
+    ]
+
 
 
     rules: [
@@ -26,9 +60,16 @@ scrape-transactions-from-hash: func [hash] [
 
     site: to-text/relax read url
 
+    parse site  transaction-page-rules
+
+    for-each section sections [
+
+        parse section detag-rule
+        append detagged-sections output
+    ]
+    probe detagged-sections
+
     parse site rules
-
-
 ]
 
 
