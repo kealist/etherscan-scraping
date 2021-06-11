@@ -112,26 +112,7 @@ scrape-transactions-from-hash: func [hash] [
         |
         copy address to end
     ]
-
-    rules: [
-        some [ 
-            thru "<b>From</b>" 
-            thru "title='" 
-            copy sender to "'" 
-            
-            thru "<b>To</b>"
-            thru "title='" 
-            copy receiver to "'" 
-
-            thru "<b>For</b>"
-            thru "Estimated Value on Day of Transfer'"
-            thru "value='"
-            copy amount to "'"
-            (print spaced ["From" to text! sender "TO" to text! receiver "AMOUNT" to text! amount ])
-        ]
-        to end
-    ]
-
+    
     site: to-text/relax read url
 
     save %test.html site
