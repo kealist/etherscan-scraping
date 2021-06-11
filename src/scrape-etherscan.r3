@@ -52,7 +52,7 @@ index: 0
 
 
 
-
+;scrape-transactions-from-hash "0x5497c1bd2bfe0172ebe6df4f38a4398e934cbd58b91d2bad72d700387d52abab"
 
 scrape-transactions-from-hash: func [hash] [
     url: to url! probe append copy https://etherscan.io/tx/ hash
@@ -60,7 +60,55 @@ scrape-transactions-from-hash: func [hash] [
     sections: copy []
     detagged-sections: copy []
     transaction-strings: copy []
-    transaction-page-rules: [
+
+    single-transaction-page-rule: [
+        from-section-rule
+        to-section-rule
+        value-section-rule
+
+        (replace/all usd-amount complement charset [{$.,} #"a" - #"z" #"0" - #"9"] {})
+        (parse sender address-rule)
+        (sender: address)
+        (parse receiver address-rule)
+        (receiver: address)
+        (print compose [(hash) (to text! sender) (to text! receiver) (to text! token-amount)  (to text! usd-amount) ])
+        (append transactions compose [(hash) (to text! sender) (to text! receiver) (to text! token-amount)  (to text! usd-amount) ])
+        to end
+    ]
+
+    to-section-rule: [
+        thru "</i>To:</div>"
+        thru "<a"
+        thru ">"
+        copy receiver to "<"
+    ]
+
+    from-section-rule: [
+
+        thru "</i>From:</div>"
+        thru "<span"
+        thru ">"
+        copy sender to "<"
+    ]
+
+    value-section-rule: [
+        thru "</i>Value:</div"
+        thru "<span"
+        thru "<span"
+        thru "<span"
+        thru ">"
+        copy token-amount to "</span"
+        thru "</span>"
+        [  
+            thru {LitOldPrice = "(}
+            copy usd-amount to ")"
+        ]
+
+        |
+        [copy usd-amount to "<"]
+    ]
+
+    multiple-transaction-page-rules: [
         some section
         to end
     ]
@@ -72,6 +120,7 @@ scrape-transactions-from-hash: func [hash] [
     section-end: {<hr class="hr-space">}
 
     section: [
+
         thru section-start
 
         copy sec thru section-end
@@ -170,7 +219,7 @@ scrape-transactions-from-hash: func [hash] [
 
     save %test.html site
 
-    parse site  transaction-page-rules
+    parse site multiple-transaction-page-rules
 
     for-each section sections [
         parse section section-to-transaction-rule
@@ -180,6 +229,9 @@ scrape-transactions-from-hash: func [hash] [
         parse transaction-string transaction-rule
     ]
 
+    if (length-of transactions) = 0 [
+        parse site single-transaction-page-rule
+    ]
 
     return transactions
 ]
@@ -193,7 +245,7 @@ for-each [hash empty] tx-values [
     if (not hash = "Txhash")  [
 
 
-        if tx-map/(hash) == null [
+        if tx-map/(hash) == null or ((length-of tx-map/(hash)) = 0) [
             trans: scrape-transactions-from-hash hash
 
 
