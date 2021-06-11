@@ -6,15 +6,46 @@ input: to-text/relax read %"Working Radar Fund.csv"
 input-lines: split input newline
 
 
-for-each line input-lines [
-    line-split: split line ","
+split-csv-line: func [line] [
+    elements: copy []
+    csv-line-rule: [
+        some [
+            [
+                {"}
+                copy element to {"}
+                {"}
+                thru ","
+                (append elements element)
+            ]
+            |
+            [
+                copy element to ","
+                thru ","
+                (append elements element)
+            ]
+        ]
+        to end
+    ]
 
-    probe line-split
+    parse line csv-line-rule
+    return elements
+]
+
+
+
+
+for-each line input-lines [
+    
+
+    items: split-csv-line line
+
+    probe items
+
 ]
 
 
 tx-map: make map! [
-
+    
 ]
 
 
@@ -112,7 +143,7 @@ scrape-transactions-from-hash: func [hash] [
         |
         copy address to end
     ]
-    
+
     site: to-text/relax read url
 
     save %test.html site
