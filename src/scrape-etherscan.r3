@@ -52,7 +52,9 @@ index: 0
 
 
 
-;scrape-transactions-from-hash "0x5497c1bd2bfe0172ebe6df4f38a4398e934cbd58b91d2bad72d700387d52abab"
+;scrape-transactions-from-hash "0xfd1b810dbf898e28447c19e56facdb4417d1baea79c8b71642bda399fffac297"
+; save %prob.html to-text/relax read https://etherscan.io/tx/0xfd1b810dbf898e28447c19e56facdb4417d1baea79c8b71642bda399fffac297
+
 
 scrape-transactions-from-hash: func [hash] [
     url: to url! probe append copy https://etherscan.io/tx/ hash
@@ -92,20 +94,38 @@ scrape-transactions-from-hash: func [hash] [
     ]
 
     value-section-rule: [
+        (usd-amount: "" token-amount: "")
         thru "</i>Value:</div"
-        thru "<span"
-        thru "<span"
-        thru "<span"
-        thru ">"
-        copy token-amount to "</span"
-        thru "</span>"
+
+         ;   [
+         ;       thru "The amount of ETH to be transferred to the recipient with the transaction'>"
+         ;       copy token-amount to "<"
+         ;   ]
+        ;|
+            [
+                thru "<span"
+                thru "<span"
+                thru "<span"
+                thru ">"
+                copy token-amount to "</span"
+                (if (find token-amount "<") [ 
+                    parse token-amount detag-rule
+                    token-amount: output
+                    token-amount: replace/all token-amount " " ""
+                ])
+                thru "</span>"
+            ]
         [  
             thru {LitOldPrice = "(}
             copy usd-amount to ")"
         ]
 
         |
-        [copy usd-amount to "<"]
+        [
+            copy usd-amount to "<"
+
+        ]
+        
     ]
 
     multiple-transaction-page-rules: [
