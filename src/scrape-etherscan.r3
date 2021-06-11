@@ -1,31 +1,32 @@
 Rebol[]
 
 scrape-transactions-from-hash: func [hash] [
-    url: to url! probe append copy https://etherscan.io/tx/0x hash
-
+    url: to url! probe append copy https://etherscan.io/tx/ hash
+    transactions: copy []
     sections: copy []
     detagged-sections: copy []
-
+    transaction-strings: copy []
     transaction-page-rules: [
-
         some section
         to end
-
-
     ]
 
-    section-start: "<hr class='hr-space'><div class='row'><div class='col-md-3 font-weight-bold font-weight-sm-normal mb-1 mb-md-0'>"
+    ;; the transaction section starts with this HTML
+    section-start: {<hr class='hr-space'><div class='row'><div class='col-md-3 font-weight-bold font-weight-sm-normal mb-1 mb-md-0'>}
 
+    ;; the transaction section ends with this HTML
     section-end: {<hr class="hr-space">}
 
     section: [
         thru section-start
 
-        copy sec to section-end
+        copy sec thru section-end
 
         (append sections sec)
     ]
 
+
+    ;removes all tags
     detag-rule: [
         (output: copy "")
         some [
@@ -37,6 +38,45 @@ scrape-transactions-from-hash: func [hash] [
         (append output text)
     ]
 
+    section-to-transaction-rule: [
+        some [
+            thru "<b>From</b>"
+            [
+
+                copy transaction to "<b>From</b>" 
+                (append transaction-strings transaction)
+                |
+                copy transaction to section-end 
+                (append transaction-strings transaction)
+            ]
+
+        ]
+        to end
+    ]
+
+    transaction-rule:
+    [
+        thru "title='" 
+        copy sender to "'" 
+        
+        thru "<b>To</b>"
+        thru "title='" 
+        copy receiver to "'" 
+        [
+            thru "<b>For</b>"
+            thru "Estimated Value on Day of Transfer'"
+            thru "value='"
+            copy amount to "'"
+            |
+            thru "<b>For</b>"
+            thru "<span"
+            thru ">"
+            copy amount to "<"
+        ]
+        (replace/all amount complement charset [{$.} #"a" - #"z" #"0" - #"9"] {})
+        (append transactions compose [(hash) (to text! sender) (to text! receiver) (to text! amount) ])
+        to end
+    ]
 
 
     rules: [
@@ -50,9 +90,9 @@ scrape-transactions-from-hash: func [hash] [
             copy receiver to "'" 
 
             thru "<b>For</b>"
-            thru "<span"
-            thru ">" thru ">"
-            copy amount to "<"
+            thru "Estimated Value on Day of Transfer'"
+            thru "value='"
+            copy amount to "'"
             (print spaced ["From" to text! sender "TO" to text! receiver "AMOUNT" to text! amount ])
         ]
         to end
@@ -60,17 +100,29 @@ scrape-transactions-from-hash: func [hash] [
 
     site: to-text/relax read url
 
+    save %test.html site
+
     parse site  transaction-page-rules
 
     for-each section sections [
-
-        parse section detag-rule
-        append detagged-sections output
+        parse section section-to-transaction-rule
     ]
-    probe detagged-sections
 
-    parse site rules
+    for-each transaction-string transaction-strings [
+        parse transaction-string transaction-rule
+    ]
+
+    return transactions
 ]
 
 
-scrape-transactions-from-hash "213b583e77066b0fa8f180b20bc31975a556fc306f161a5ce151d5b5fd9e4cc8"
+trans: scrape-transactions-from-hash "0x213b583e77066b0fa8f180b20bc31975a556fc306f161a5ce151d5b5fd9e4cc8"
+
+csv-data: "TxHash,To,From,Amount"
+append csv-data newline
+
+for-each [hash from to amount] trans [
+    append csv-data unspaced reduce [hash "," from "," to "," amount newline]
+]
+
+save %transactions.csv csv-data
