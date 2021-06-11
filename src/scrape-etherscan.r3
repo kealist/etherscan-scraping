@@ -199,7 +199,7 @@ for-each [hash empty] tx-values [
 
 save %tx-map.r3 compose [tx-map: (tx-map)]
 
-csv-data: "TxHash,To,From,Amount"
+csv-data: "TxHash,To,From,TokenAmount,UsdAmount"
 append csv-data newline
 
 for-each [hash trans] tx-map [
