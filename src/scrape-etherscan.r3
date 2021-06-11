@@ -1,5 +1,23 @@
 Rebol[]
 
+
+input: to-text/relax read %"Working Radar Fund.csv"
+
+input-lines: split input newline
+
+
+for-each line input-lines [
+    line-split: split line ","
+
+    probe line-split
+]
+
+
+tx-map: make map! [
+
+]
+
+
 scrape-transactions-from-hash: func [hash] [
     url: to url! probe append copy https://etherscan.io/tx/ hash
     transactions: copy []
@@ -74,10 +92,26 @@ scrape-transactions-from-hash: func [hash] [
             copy amount to "<"
         ]
         (replace/all amount complement charset [{$.} #"a" - #"z" #"0" - #"9"] {})
+        (parse sender address-rule)
+        (sender: address)
+        (parse receiver address-rule)
+        (receiver: address)
+
         (append transactions compose [(hash) (to text! sender) (to text! receiver) (to text! amount) ])
         to end
     ]
 
+
+    address-rule: [
+        [
+        copy name to "("
+        "("
+        copy address to ")"
+        to end
+        ]
+        |
+        copy address to end
+    ]
 
     rules: [
         some [ 
