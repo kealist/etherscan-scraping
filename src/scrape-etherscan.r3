@@ -145,6 +145,17 @@ scrape-transactions-from-hash: func [hash] [
 
 
     address-rule: [
+    [
+        copy name to "("
+        "("
+        copy other-name to ")"
+        ")"
+        thru "("
+        copy address to ")"
+        to end
+        ]
+        |
+
         [
         copy name to "("
         "("
