@@ -169,6 +169,7 @@ scrape-transactions-from-hash: func [hash] [
         parse transaction-string transaction-rule
     ]
 
+
     return transactions
 ]
 
@@ -195,15 +196,19 @@ for-each [hash empty] tx-values [
 ]
 
 
-;trans: scrape-transactions-from-hash "0x213b583e77066b0fa8f180b20bc31975a556fc306f161a5ce151d5b5fd9e4cc8"
+
+save %tx-map.r3 compose [tx-map: (tx-map)]
 
 csv-data: "TxHash,To,From,Amount"
 append csv-data newline
 
 for-each [hash trans] tx-map [
+    if trans == [] [
 
+        append csv-data unspaced reduce [hash ", CHECK , CHECK, CHECK, CHECK" newline]
+    ]
     for-each [hash from to token-amount usd-amount] trans [
-        append csv-data unspaced reduce [hash "," from "," to "," token-amount "," usd-amount newline]
+        append csv-data unspaced reduce [hash "," from "," to {,"} token-amount {","} usd-amount {"} newline]
     ]
 ]
 
