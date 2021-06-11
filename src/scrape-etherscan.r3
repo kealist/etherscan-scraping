@@ -32,21 +32,29 @@ split-csv-line: func [line] [
 ]
 
 
+tx-values: copy make map! [
+    
+]
+
+tx-map: copy make map! [
+    
+]
 
 
 for-each line input-lines [
     
-
     items: split-csv-line line
 
-    probe items
+    tx-values/(items/15): ""
+
+;    print unspaced ["Amount: " items/3 ", TxHash: " items/15]
 
 ]
 
+index: 0
 
-tx-map: make map! [
-    
-]
+
+
 
 
 scrape-transactions-from-hash: func [hash] [
@@ -162,13 +170,31 @@ scrape-transactions-from-hash: func [hash] [
 ]
 
 
-trans: scrape-transactions-from-hash "0x213b583e77066b0fa8f180b20bc31975a556fc306f161a5ce151d5b5fd9e4cc8"
+
+for-each [hash empty] tx-values [
+    print unspaced ["Scraping Progress: " index " of " length-of tx-values " hash: " hash " empty: " empty]
+    
+    trans: scrape-transactions-from-hash hash
+
+    tx-map/(hash): trans
+
+    wait 5 
+    index: index + 1
+
+
+]
+
+
+;trans: scrape-transactions-from-hash "0x213b583e77066b0fa8f180b20bc31975a556fc306f161a5ce151d5b5fd9e4cc8"
 
 csv-data: "TxHash,To,From,Amount"
 append csv-data newline
 
-for-each [hash from to amount] trans [
-    append csv-data unspaced reduce [hash "," from "," to "," amount newline]
+for-each [hash trans] tx-map [
+
+    for-each [hash from to amount] trans [
+        append csv-data unspaced reduce [hash "," from "," to "," amount newline]
+    ]
 ]
 
 save %transactions.csv csv-data
