@@ -36,10 +36,7 @@ tx-values: copy make map! [
     
 ]
 
-tx-map: copy make map! [
-    
-]
-
+do load %tx-map.r3
 
 for-each line input-lines [
     
@@ -121,22 +118,28 @@ scrape-transactions-from-hash: func [hash] [
         copy receiver to "'" 
         [
             thru "<b>For</b>"
+            thru "<span"
+
+            thru "<span"
+            thru ">"
+            copy token-amount to "<"
             thru "Estimated Value on Day of Transfer'"
             thru "value='"
-            copy amount to "'"
+            copy usd-amount to "'"
             |
             thru "<b>For</b>"
             thru "<span"
             thru ">"
-            copy amount to "<"
+            copy token-amount to "<"
+            (usd-amount: "n/a")
         ]
-        (replace/all amount complement charset [{$.} #"a" - #"z" #"0" - #"9"] {})
+        (replace/all usd-amount complement charset [{$.,} #"a" - #"z" #"0" - #"9"] {})
         (parse sender address-rule)
         (sender: address)
         (parse receiver address-rule)
         (receiver: address)
-
-        (append transactions compose [(hash) (to text! sender) (to text! receiver) (to text! amount) ])
+        (print compose [(hash) (to text! sender) (to text! receiver) (to text! token-amount)  (to text! usd-amount) ])
+        (append transactions compose [(hash) (to text! sender) (to text! receiver) (to text! token-amount)  (to text! usd-amount) ])
         to end
     ]
 
@@ -174,14 +177,21 @@ scrape-transactions-from-hash: func [hash] [
 for-each [hash empty] tx-values [
     print unspaced ["Scraping Progress: " index " of " length-of tx-values " hash: " hash " empty: " empty]
     
-    trans: scrape-transactions-from-hash hash
 
-    tx-map/(hash): trans
+    if (not hash = "Txhash")  [
 
-    wait 5 
+
+        if tx-map/(hash) == null [
+            trans: scrape-transactions-from-hash hash
+
+
+            tx-map/(hash): trans
+            
+            wait 10 
+        ]
+    ]
+
     index: index + 1
-
-
 ]
 
 
@@ -192,8 +202,8 @@ append csv-data newline
 
 for-each [hash trans] tx-map [
 
-    for-each [hash from to amount] trans [
-        append csv-data unspaced reduce [hash "," from "," to "," amount newline]
+    for-each [hash from to token-amount usd-amount] trans [
+        append csv-data unspaced reduce [hash "," from "," to "," token-amount "," usd-amount newline]
     ]
 ]
 
