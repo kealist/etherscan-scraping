@@ -36,7 +36,11 @@ tx-values: copy make map! [
     
 ]
 
-do load %tx-map.r3
+either exists? %tx-map.r3 [
+    do load %tx-map.r3
+] [
+    tx-map: make map! []
+]
 
 for-each line input-lines [
     
